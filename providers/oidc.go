@@ -32,28 +32,22 @@ func NewOIDCProvider(p *ProviderData) *OIDCProvider {
 	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tlsConfig}}
 
 	var cfg oidc.ProviderConfig
-	for {
-		cfg, err = oidc.FetchProviderConfig(httpClient, p.DiscoveryURL.String())
-		if err == nil {
-			break
+	if p.DiscoveryURL.String() != "" {
+		for {
+			cfg, err = oidc.FetchProviderConfig(httpClient, p.DiscoveryURL.String())
+			if err == nil {
+				break
+			}
+
+			sleep := 3 * time.Second
+			log.Printf("Failed fetching provider config, trying again in %v: %v", sleep, err)
+			time.Sleep(sleep)
 		}
-
-		sleep := 3 * time.Second
-		log.Printf("Failed fetching provider config, trying again in %v: %v", sleep, err)
-		time.Sleep(sleep)
+		p.Scope = "default"
+	} else {
+		cfg.AuthEndpoint = p.LoginURL
+		cfg.TokenEndpoint = p.RedeemURL
 	}
-
-	u, err := url.Parse(cfg.TokenEndpoint)
-	if err != nil {
-		panic(err)
-	}
-	p.ValidateURL = u
-	u, err = url.Parse(cfg.AuthEndpoint)
-	if err != nil {
-		panic(err)
-	}
-	p.RedeemURL = u
-	p.Scope = "email"
 
 	ccfg := oidc.ClientConfig{
 		HTTPClient:     httpClient,
@@ -65,8 +59,9 @@ func NewOIDCProvider(p *ProviderData) *OIDCProvider {
 	if err != nil {
 		log.Fatalf("Unable to create Client: %v", err)
 	}
-
-	client.SyncProviderConfig(p.DiscoveryURL.String())
+	if p.DiscoveryURL.String() != "" {
+		client.SyncProviderConfig(p.DiscoveryURL.String())
+	}
 
 	oac, err := client.OAuthClient()
 	if err != nil {
@@ -103,12 +98,12 @@ func (p *OIDCProvider) Redeem(redirectURL, code string) (s *SessionState, err er
 		log.Printf("token claims error: %v", err)
 		return nil, err
 	}
-
+	tok.Signature
 	s = &SessionState{
 		AccessToken:  tok.Data(),
 		RefreshToken: tok.Data(),
 		ExpiresOn:    time.Now().Add(time.Duration(claims["exp"].(float64)) * time.Second).Truncate(time.Second),
-		Email:        claims["email"].(string),
+		User:         claims["sub"].(string),
 	}
 
 	return
