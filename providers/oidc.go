@@ -98,7 +98,6 @@ func (p *OIDCProvider) Redeem(redirectURL, code string) (s *SessionState, err er
 		log.Printf("token claims error: %v", err)
 		return nil, err
 	}
-	tok.Signature
 	s = &SessionState{
 		AccessToken:  tok.Data(),
 		RefreshToken: tok.Data(),
