@@ -43,17 +43,9 @@ func NewOIDCProvider(p *ProviderData) *OIDCProvider {
 		time.Sleep(sleep)
 	}
 
-	u, err := url.Parse(cfg.TokenEndpoint)
-	if err != nil {
-		panic(err)
-	}
-	p.ValidateURL = u
-	u, err = url.Parse(cfg.AuthEndpoint)
-	if err != nil {
-		panic(err)
-	}
-	p.RedeemURL = u
-	p.Scope = "email"
+	p.ValidateURL = cfg.TokenEndpoint
+	p.RedeemURL = cfg.AuthEndpoint
+	p.Scope = "default"
 
 	ccfg := oidc.ClientConfig{
 		HTTPClient:     httpClient,
