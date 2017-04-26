@@ -108,7 +108,7 @@ func (p *OIDCProvider) Redeem(redirectURL, code string) (s *SessionState, err er
 		AccessToken:  tok.Data(),
 		RefreshToken: tok.Data(),
 		ExpiresOn:    time.Now().Add(time.Duration(claims["exp"].(float64)) * time.Second).Truncate(time.Second),
-		Email:        claims["email"].(string),
+		Email:        claims["sub"].(string),
 	}
 
 	return
