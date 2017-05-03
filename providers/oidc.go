@@ -51,6 +51,7 @@ func NewOIDCProvider(p *ProviderData) *OIDCProvider {
 		HTTPClient:     httpClient,
 		ProviderConfig: cfg,
 		Credentials:    cc,
+		RedirectURL:    "/oauth2/callback",
 	}
 
 	client, err := oidc.NewClient(ccfg)
@@ -79,11 +80,12 @@ func NewOIDCProvider(p *ProviderData) *OIDCProvider {
 }
 
 func (p *OIDCProvider) Redeem(redirectURL, code string) (s *SessionState, err error) {
+
 	c, err := oidc.NewClient(p.clientConfig)
 	if err != nil {
 		log.Fatalf("Unable to create Client: %v", err)
 	}
-
+	c.SetRedirectURL(redirectURL)
 	tok, err := c.ExchangeAuthCode(code)
 	if err != nil {
 		log.Printf("exchange auth error: %v\n", err)
